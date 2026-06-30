@@ -25,6 +25,7 @@ map("n", "<leader>flp", function() lnav().find_in("resources/views/components", 
 map("n", "<leader>flt", function() lnav().find_in("tests", "Tests") end,                       { desc = "Find tests" })
 map("n", "<leader>lg",  function() lnav().debugbar_picker() end,                               { desc = "Debugbar goto (latest request)" })
 map("n", "<leader>lG",  function() lnav().goto_prompt() end,                                   { desc = "Goto view/controller (paste)" })
+map("n", "<leader>gu",  function() lnav().git_picker() end,                                    { desc = "Git uncommitted files" })
 -- stylua: ignore end
 
 -- Helper popup listing the curated Laravel / Debug / Navigation commands
@@ -39,6 +40,7 @@ vim.schedule(function()
     wk.add {
       { "<leader>l", group = "Laravel" },
       { "<leader>d", group = "Debug" },
+      { "<leader>g", group = "Git" },
       { "<leader>fl", group = "Find Laravel" },
     }
   end

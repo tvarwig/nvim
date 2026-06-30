@@ -83,6 +83,7 @@ composer global require friendsofphp/php-cs-fixer
 | `<leader>ma` | Marks |
 | `<leader>cm` | Git commits |
 | `<leader>gt` | Git status |
+| `<leader>gu` | Git uncommitted files (pick + jump to change) |
 | `<leader>pt` | Pick terminal |
 
 ### LSP
@@ -106,6 +107,16 @@ composer global require friendsofphp/php-cs-fixer
 | `<leader>la` | Laravel artisan |
 | `<leader>lr` | Laravel routes |
 | `<leader>lm` | Laravel related files |
+| `<leader>ln` | make:* generators |
+| `<leader>lc` | Composer |
+| `<leader>lh` | Command history (re-run) |
+| `<leader>lR` | Resources |
+| `<leader>lt` | Tinker (terminal) |
+| `<leader>lg` | Debugbar picker — latest request's controller + views |
+| `<leader>lG` | Goto from pasted Debugbar string (view / `Controller@method`) |
+| `<leader>fl…` | Find Laravel files by category (views, controllers, models, …) |
+
+See **[CHEATSHEET.md](CHEATSHEET.md)** for the full Laravel / Find / Git / Debug reference, or press `<leader>?` in Neovim for the popup. The startup dashboard (open `nvim` with no file) is also a launcher for these.
 
 ### Buffers & Tabs
 | Key | Action |
@@ -120,7 +131,7 @@ composer global require friendsofphp/php-cs-fixer
 |-----|--------|
 | `<leader>n` | Toggle line numbers |
 | `<leader>rn` | Toggle relative numbers |
-| `<leader>ch` | Cheatsheet |
+| `<leader>?` | Command cheatsheet (popup) |
 | `<leader>th` | Switch theme |
 | `<leader>e` | Focus file tree |
 | `<C-n>` | Toggle file tree |

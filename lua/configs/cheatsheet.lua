@@ -33,6 +33,14 @@ local SECTIONS = {
     },
   },
   {
+    "Git  (<leader>g)",
+    {
+      { "<leader>gu", "Uncommitted files — pick + jump to change" },
+      { "<leader>gt", "Git status (Telescope)" },
+      { "<leader>cm", "Git commits" },
+    },
+  },
+  {
     "Debug  (<leader>d  /  F-keys)",
     {
       { "<leader>db / <F9>", "Toggle breakpoint" },

@@ -32,7 +32,8 @@ Open `nvim` with no file for the splash screen · press `<leader>?` anytime for 
 | `<leader>lh` | Command history (re-run) |
 | `<leader>lR` | Resources |
 | `<leader>lt` | Tinker (terminal) |
-| `<leader>lg` | Goto from Debugbar (view / Controller@method) |
+| `<leader>lg` | Debugbar picker — latest request's controller + views |
+| `<leader>lG` | Goto from pasted string (view / Controller@method) |
 
 ## Find Laravel Files (`<leader>fl`)
 
@@ -44,6 +45,14 @@ Open `nvim` with no file for the splash screen · press `<leader>?` anytime for 
 | `<leader>flM` | Migrations | | `<leader>flt` | Tests |
 | `<leader>flr` | Route files | | `<leader>flR` | Form requests |
 | `<leader>flj` | Jobs | | | |
+
+## Git (`<leader>g`)
+
+| Key | Action |
+| --- | --- |
+| `<leader>gu` | Uncommitted files — pick + jump to first change |
+| `<leader>gt` | Git status (Telescope) |
+| `<leader>cm` | Git commits |
 
 ## Debugging (`<leader>d` / function keys)
 
@@ -87,11 +96,19 @@ Xdebug 3 on port **9003** — Herd ships it, no install needed.
 3. Trigger it — load the page in the browser, **or** run a CLI command under Xdebug:
    `herd debug artisan queue:work` · `herd debug artisan tinker`
 
-## Debugbar "Goto" (`<leader>lg`)
+## Debugbar Navigation
 
-Copy a value from the Laravel Debugbar, press `<leader>lg` (the prompt pre-fills from your clipboard):
+Laravel Debugbar persists each request to `storage/debugbar/`. Two ways to jump from it:
 
-| Debugbar value | Opens |
+**`<leader>lg` — picker.** Reads the **latest** request and lists its controller (from the request collector) plus every rendered Blade view. Pick one to jump — the controller opens on its method, views open at the file. Debugbar's grouping count prefix (`11x portal.projects.show`) is stripped automatically, and paths come from Debugbar's own `xdebug_link` so they resolve even for components in non-standard locations.
+
+**`<leader>lG` — paste.** Copy any Debugbar string and press it (the prompt pre-fills from your clipboard):
+
+| Pasted value | Opens |
 | --- | --- |
 | `portal.projects.show` | `resources/views/portal/projects/show.blade.php` |
 | `App\Http\Controllers\Portal\ProjectController@show` | the controller, cursor on `show()` |
+
+## Git "Uncommitted" (`<leader>gu`)
+
+Lists everything `git status` reports — staged, unstaged, and untracked. Pick a file to open it; the cursor lands on the first changed hunk (new/untracked files open at the top).

@@ -277,6 +277,47 @@ local function jump(item)
   end
 end
 
+-- Open a Telescope picker over `items` (each { display, ordinal, path, line }).
+-- `on_select(item)` runs for the chosen entry (defaults to `jump`).
+local function open_picker(title, items, on_select)
+  local pickers = require "telescope.pickers"
+  local finders = require "telescope.finders"
+  local conf = require("telescope.config").values
+  local actions = require "telescope.actions"
+  local action_state = require "telescope.actions.state"
+  on_select = on_select or jump
+
+  pickers
+    .new({}, {
+      prompt_title = title,
+      finder = finders.new_table {
+        results = items,
+        entry_maker = function(item)
+          return {
+            value = item,
+            display = item.display,
+            ordinal = item.ordinal,
+            path = item.path, -- drives the file preview
+            lnum = item.line,
+          }
+        end,
+      },
+      sorter = conf.generic_sorter {},
+      previewer = conf.file_previewer {},
+      attach_mappings = function(prompt_bufnr)
+        actions.select_default:replace(function()
+          local entry = action_state.get_selected_entry()
+          actions.close(prompt_bufnr)
+          if entry and entry.value then
+            on_select(entry.value)
+          end
+        end)
+        return true
+      end,
+    })
+    :find()
+end
+
 --- Pick the controller / views of the latest Debugbar request and jump to one.
 --- Falls back to the manual goto prompt when there's no stored request data.
 function M.debugbar_picker()
@@ -315,41 +356,78 @@ function M.debugbar_picker()
     title = "Debugbar: " .. vim.trim((meta.method or "") .. " " .. (meta.uri or ""))
   end
 
-  local pickers = require "telescope.pickers"
-  local finders = require "telescope.finders"
-  local conf = require("telescope.config").values
-  local actions = require "telescope.actions"
-  local action_state = require "telescope.actions.state"
+  open_picker(title, items, jump)
+end
 
-  pickers
-    .new({}, {
-      prompt_title = title,
-      finder = finders.new_table {
-        results = items,
-        entry_maker = function(item)
-          return {
-            value = item,
-            display = item.display,
-            ordinal = item.ordinal,
-            path = item.path, -- drives the file preview
-            lnum = item.line,
-          }
-        end,
-      },
-      sorter = conf.generic_sorter {},
-      previewer = conf.file_previewer {},
-      attach_mappings = function(prompt_bufnr)
-        actions.select_default:replace(function()
-          local entry = action_state.get_selected_entry()
-          actions.close(prompt_bufnr)
-          if entry and entry.value then
-            jump(entry.value)
-          end
-        end)
-        return true
-      end,
-    })
-    :find()
+-- Open a git file in the jumplist, best-effort cursor on its first changed line.
+local function git_jump(root, item)
+  if not item or not item.path then
+    return
+  end
+  if vim.fn.filereadable(item.path) == 0 then
+    vim.notify("Git: file not found\n" .. item.path, vim.log.levels.WARN)
+    return
+  end
+  vim.cmd "normal! m'" -- jumplist, so <C-o> returns
+  vim.cmd("edit " .. vim.fn.fnameescape(item.path))
+  -- Jump to the first changed hunk (staged or unstaged). Untracked/new files
+  -- have no diff against HEAD, so the cursor just stays at the top.
+  local diff = vim.fn.systemlist { "git", "-C", root, "diff", "HEAD", "-U0", "--", item.relpath }
+  if vim.v.shell_error == 0 then
+    for _, l in ipairs(diff) do
+      local start = l:match "^@@ %-%d+,?%d* %+(%d+)"
+      if start then
+        vim.fn.cursor(tonumber(start), 1)
+        vim.cmd "normal! zz"
+        break
+      end
+    end
+  end
+end
+
+--- Pick an uncommitted git file (staged, unstaged, or untracked) and jump to it.
+function M.git_picker()
+  local root = M.root()
+  local lines = vim.fn.systemlist {
+    "git", "-C", root, "-c", "core.quotepath=false", "status", "--porcelain", "--untracked-files=all",
+  }
+  if vim.v.shell_error ~= 0 then
+    return vim.notify("Git: not a repository here", vim.log.levels.WARN)
+  end
+
+  local items, seen = {}, {}
+  for _, line in ipairs(lines) do
+    if #line > 3 then
+      local status = line:sub(1, 2)
+      local rel = line:sub(4)
+      -- Renames/copies are "old -> new"; keep the new path.
+      local arrow = rel:find(" -> ", 1, true)
+      if arrow then
+        rel = rel:sub(arrow + 4)
+      end
+      -- git wraps paths with special chars in double quotes.
+      if rel:sub(1, 1) == '"' and rel:sub(-1) == '"' then
+        rel = rel:sub(2, -2)
+      end
+      if rel ~= "" and not seen[rel] then
+        seen[rel] = true
+        table.insert(items, {
+          relpath = rel,
+          path = root .. "/" .. rel,
+          display = "  " .. status .. "  " .. rel,
+          ordinal = rel,
+        })
+      end
+    end
+  end
+
+  if vim.tbl_isempty(items) then
+    return vim.notify("Git: no uncommitted changes", vim.log.levels.INFO)
+  end
+
+  open_picker("Git: uncommitted changes", items, function(item)
+    git_jump(root, item)
+  end)
 end
 
 --- Run a laravel.nvim picker by name, guarding the global (nil outside a project).

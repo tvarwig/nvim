@@ -23,7 +23,7 @@ local FIND = "lua require('configs.laravel_nav').find_in"
 -- Lazy-load nvim-dap (nvdash overrides the lazy `keys`, so trigger it ourselves).
 local DAP = "lua require('lazy').load({plugins={'nvim-dap'}}) require('dap')"
 
-return {
+local config = {
   load_on_startup = true,
 
   header = {
@@ -44,7 +44,7 @@ return {
     btn("Related files", "<leader>lm", L .. "('related')"),
     btn("Make generators", "<leader>ln", L .. "('make')"),
     btn("Tinker", "<leader>lt", "botright split | resize 15 | terminal php artisan tinker"),
-    btn("Goto from Debugbar", "<leader>lg", "lua require('configs.laravel_nav').debugbar_picker()"),
+    btn("Goto from Debugbar", "<leader>ld", "lua require('configs.laravel_nav').debugbar_picker()"),
 
     sep,
     header "Find",
@@ -105,3 +105,27 @@ return {
     },
   },
 }
+
+-- nvdash maps each button's `keys` to its `cmd` as a description-less,
+-- buffer-local keymap. While the dashboard is focused that shadows our global
+-- (desc'd) mappings in which-key — e.g. <leader>flv showed the raw
+-- require('configs.laravel_nav').find_in(…) call instead of "Views". Re-apply
+-- the button keymaps on the dashboard buffer using each label as the desc.
+vim.api.nvim_create_autocmd("FileType", {
+  group = vim.api.nvim_create_augroup("NvdashButtonDescs", { clear = true }),
+  pattern = "nvdash",
+  callback = function(ev)
+    for _, b in ipairs(config.buttons) do
+      if type(b) == "table" and b.keys and b.cmd and type(b.txt) == "string" then
+        vim.keymap.set("n", b.keys, "<cmd>" .. b.cmd .. "<cr>", {
+          buffer = ev.buf,
+          desc = vim.trim(b.txt),
+          nowait = true,
+          silent = true,
+        })
+      end
+    end
+  end,
+})
+
+return config

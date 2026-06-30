@@ -6,7 +6,7 @@ local map = vim.keymap.set
 
 map("i", "jk", "<ESC>")
 
--- Laravel category finders (<leader>fl…) + Debugbar goto (<leader>lg)
+-- Laravel category finders (<leader>fl…) + Debugbar goto (<leader>ld)
 local lnav = function()
   return require "configs.laravel_nav"
 end
@@ -23,7 +23,7 @@ map("n", "<leader>flf", function() lnav().find_in("database/factories", "Factori
 map("n", "<leader>fls", function() lnav().find_in("database/seeders", "Seeders") end,          { desc = "Find seeders" })
 map("n", "<leader>flp", function() lnav().find_in("resources/views/components", "Components") end, { desc = "Find blade components" })
 map("n", "<leader>flt", function() lnav().find_in("tests", "Tests") end,                       { desc = "Find tests" })
-map("n", "<leader>lg",  function() lnav().debugbar_picker() end,                               { desc = "Debugbar goto (latest request)" })
+map("n", "<leader>ld",  function() lnav().debugbar_picker() end,                               { desc = "Debugbar goto (latest request)" })
 map("n", "<leader>lG",  function() lnav().goto_prompt() end,                                   { desc = "Goto view/controller (paste)" })
 map("n", "<leader>gu",  function() lnav().git_picker() end,                                    { desc = "Git uncommitted files" })
 -- stylua: ignore end

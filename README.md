@@ -112,7 +112,7 @@ composer global require friendsofphp/php-cs-fixer
 | `<leader>lh` | Command history (re-run) |
 | `<leader>lR` | Resources |
 | `<leader>lt` | Tinker (terminal) |
-| `<leader>lg` | Debugbar picker — latest request's controller + views |
+| `<leader>ld` | Debugbar picker — latest request's controller + views |
 | `<leader>lG` | Goto from pasted Debugbar string (view / `Controller@method`) |
 | `<leader>fl…` | Find Laravel files by category (views, controllers, models, …) |
 

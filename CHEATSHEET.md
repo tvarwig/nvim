@@ -32,7 +32,7 @@ Open `nvim` with no file for the splash screen · press `<leader>?` anytime for 
 | `<leader>lh` | Command history (re-run) |
 | `<leader>lR` | Resources |
 | `<leader>lt` | Tinker (terminal) |
-| `<leader>lg` | Debugbar picker — latest request's controller + views |
+| `<leader>ld` | Debugbar picker — latest request's controller + views |
 | `<leader>lG` | Goto from pasted string (view / Controller@method) |
 
 ## Find Laravel Files (`<leader>fl`)
@@ -100,7 +100,7 @@ Xdebug 3 on port **9003** — Herd ships it, no install needed.
 
 Laravel Debugbar persists each request to `storage/debugbar/`. Two ways to jump from it:
 
-**`<leader>lg` — picker.** Reads the **latest** request and lists its controller (from the request collector) plus every rendered Blade view. Pick one to jump — the controller opens on its method, views open at the file. Debugbar's grouping count prefix (`11x portal.projects.show`) is stripped automatically, and paths come from Debugbar's own `xdebug_link` so they resolve even for components in non-standard locations.
+**`<leader>ld` — picker.** Reads the **latest** request and lists its controller (from the request collector) plus every rendered Blade view. Pick one to jump — the controller opens on its method, views open at the file. Debugbar's grouping count prefix (`11x portal.projects.show`) is stripped automatically, and paths come from Debugbar's own `xdebug_link` so they resolve even for components in non-standard locations.
 
 **`<leader>lG` — paste.** Copy any Debugbar string and press it (the prompt pre-fills from your clipboard):
 

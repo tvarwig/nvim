@@ -15,7 +15,7 @@ local SECTIONS = {
       { "<leader>lh", "Command history (re-run)" },
       { "<leader>lR", "Resources" },
       { "<leader>lt", "Tinker (terminal)" },
-      { "<leader>lg", "Debugbar goto — pick latest request's controller/views" },
+      { "<leader>ld", "Debugbar goto — pick latest request's controller/views" },
       { "<leader>lG", "Goto from pasted string (view / Controller@method)" },
     },
   },

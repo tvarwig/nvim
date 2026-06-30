@@ -158,29 +158,60 @@ local function collect_targets(root, data)
     end
   end
 
-  -- Controller (route collector). `controller` is "Class@method" (or "Closure"
-  -- for closure routes); `file` is "<path>:<start>-<end>" as a fallback.
-  local route = type(data.route) == "table" and data.route or {}
-  local action = route.controller
-  if type(action) == "string" and action ~= "" and action:lower() ~= "closure" then
-    local class, method = action:match "^(.-)@(.+)$"
-    push {
-      kind = "controller",
-      display = "  " .. action,
-      ordinal = "controller " .. action,
-      path = M.class_to_path(root, class or action),
-      method = method,
-    }
-  elseif type(route.file) == "string" and route.file ~= "" then
-    local rel, ln = route.file:match "^(.-):(%d+)"
-    rel = rel or route.file
-    push {
-      kind = "controller",
-      display = "  " .. (route.uri or rel),
-      ordinal = "controller " .. rel,
-      path = rel:sub(1, 1) == "/" and rel or (root .. "/" .. rel),
-      line = ln and tonumber(ln) or nil,
-    }
+  -- Resolve a Debugbar xdebug_link ({ path = "/app/…", line = "61" }) to an
+  -- absolute path + line number. Returns nil when the link is absent.
+  local function xdebug_target(xl)
+    if type(xl) ~= "table" or type(xl.path) ~= "string" or xl.path == "" then
+      return nil, nil
+    end
+    local p = xl.path:sub(1, 1) == "/" and (root .. xl.path) or (root .. "/" .. xl.path)
+    return p, tonumber(xl.line)
+  end
+
+  -- A Debugbar request field may be a bare string or { value =, xdebug_link = }.
+  local function field(v)
+    if type(v) == "table" then
+      return v.value, v.xdebug_link
+    end
+    return v, nil
+  end
+
+  -- Controller. Newer Debugbar exposes it on the Symfony request collector:
+  --   request.data.controller = { value = "Class@method", xdebug_link = {…} }
+  --   request.data.file       = { value = "app/…/X.php:start-end", … }
+  -- Older builds used a flat route collector (data.route.controller / .file).
+  local req = (type(data.request) == "table" and type(data.request.data) == "table" and data.request.data)
+    or (type(data.route) == "table" and data.route)
+    or {}
+  local action, action_xl = field(req.controller)
+  local file_val, file_xl = field(req.file)
+
+  local has_action = type(action) == "string" and action ~= "" and action:lower() ~= "closure"
+  if has_action or (type(file_val) == "string" and file_val ~= "") then
+    local class, method = (action or ""):match "^(.-)@(.+)$"
+    -- Prefer the path/line Debugbar already resolved; else parse the
+    -- "X.php:start-end" file string; else resolve the class via PSR-4.
+    local path, line = xdebug_target(action_xl or file_xl)
+    if not path and type(file_val) == "string" and file_val ~= "" then
+      local rel, ln = file_val:match "^(.-):(%d+)"
+      rel = rel or file_val
+      path = rel:sub(1, 1) == "/" and rel or (root .. "/" .. rel)
+      line = ln and tonumber(ln) or nil
+    end
+    if not path and has_action then
+      path = M.class_to_path(root, class or action)
+    end
+    if path then
+      local label = has_action and action or (file_val:gsub(":%d+%-?%d*$", ""))
+      push {
+        kind = "controller",
+        display = "  " .. label,
+        ordinal = "controller " .. label,
+        path = path,
+        method = (not line) and method or nil,
+        line = line,
+      }
+    end
   end
 
   -- Views (views collector). `templates` is an array of { name = ... }.
@@ -192,13 +223,30 @@ local function collect_targets(root, data)
     end
     for _, t in ipairs(templates) do
       local name = type(t) == "table" and (t.name or t.value) or t
-      -- Skip Blade's internal anonymous-component renders (__components::…).
-      if type(name) == "string" and name ~= "" and not name:find("__components", 1, true) then
+      local ttype = type(t) == "table" and t.type or nil
+      -- Keep only real blade views. Skip Blade's internal anonymous-component
+      -- renders (__components::…) and any controller row a collector may inject
+      -- here (it's a PHP class, not a view — already sourced from the request
+      -- collector above; resolving it as a view yields a bogus blade path).
+      local is_view = type(name) == "string"
+        and name ~= ""
+        and not name:find("__components", 1, true)
+        and ttype ~= "controller"
+        and not name:find "@"
+        and not name:find("\\", 1, true)
+      if is_view then
+        -- When Debugbar groups repeated renders it prefixes the name with a
+        -- count ("11x portal.projects.show"). Drop it for display, and resolve
+        -- the file from the xdebug_link Debugbar already computed (falling back
+        -- to the cleaned dot-name) so the count never leaks into the path.
+        local clean = (name:gsub("^%d+x%s+", ""))
+        local path, line = xdebug_target(type(t) == "table" and t.xdebug_link or nil)
         push {
           kind = "view",
-          display = "  " .. name,
-          ordinal = "view " .. name,
-          path = resolve_view(root, name),
+          display = "  " .. clean,
+          ordinal = "view " .. clean,
+          path = path or resolve_view(root, clean),
+          line = line,
         }
       end
     end
